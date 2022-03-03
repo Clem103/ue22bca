@@ -2,7 +2,7 @@ import numpy as np
 import time
 
 class LowPassFilter ():
-    
+
     def __init__(self): 
         self.a = 0.0  # here you define some useful variables
         self.mem = 0.0
@@ -24,7 +24,11 @@ class LowPassFilter ():
             self.mem = x
             self.init = False
 
-        xf = x*a + (1-a) * self.mem * (1-a)
+        if x == 0:
+            self.irr_reset()
+            return 0
+
+        xf = x*a + self.mem * (1-a)
         self.mem = xf
         return xf
 

@@ -9,6 +9,7 @@ if __name__ == "__main__":
     pseudo = "Clément Vellu"  # you can define your pseudo here
     rb = rob1a.Rob1A()   # create a robot (instance of Rob1A class)
     ctrl = control.RobotControl() # create a robot controller
+    irr_filt = filt.LowPassFilter()
 
     distancedroite = rb.get_sonar('right')
     distancegauche = rb.get_sonar('left')
@@ -22,7 +23,7 @@ if __name__ == "__main__":
         print("Rotation droite")
         ctrl.rotate_on_itself(rb, -90)
 
-    ctrl.go_straight_using_walls_stop_obstacle(rb, 150, 0.3)
+    ctrl.go_straight_using_walls_stop_obstacle(rb, 150, 0.3, irr_filt)
 
     rb.set_speed(0, 0)
 
@@ -38,6 +39,6 @@ if __name__ == "__main__":
         print("Rotation droite")
         ctrl.rotate_on_itself(rb, -90)
 
-    ctrl.go_straight_using_walls_stop_obstacle(rb, 150, 0.3)
+    ctrl.go_straight_using_walls_stop_obstacle(rb, 150, 0.3, irr_filt)
 
     rb.full_end()

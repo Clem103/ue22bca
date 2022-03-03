@@ -72,23 +72,23 @@ class RobotControl:
             if t_loop < loop_iteration_time:
                 time.sleep(loop_iteration_time-t_loop)
 
-    def go_straight_using_walls_stop_obstacle(self, rb, spd, max_dist):
+    def go_straight_using_walls_stop_obstacle(self, rb, spd, max_dist, low_filter, track_width = 0.55):
         loop_iteration_time = 0.2
         rb.set_speed(spd, spd)
         state = True
         turning_left = False
         turning_right = False
         old_d_left, old_d_right = 0,0
-        Kp = 100
+        Kp = 110
         delta_heading = 0.015
         #file = open("C:\\Users\\cvel\\Documents\\ENSTA\\UE 2.2 - Sciences et Technologies\\ue22bca\\logs\\suivi_mur.csv", 'a')
         while state:
             t0_loop = time.time()
-            rb.set_speed(spd,spd)
-            distance_right = rb.get_sonar('right')
-            distance_left = rb.get_sonar('left')
+            rb.set_speed(spd, spd)
+            distance_right = low_filter.irr(rb.get_sonar('right'), 0.85)
+            distance_left = low_filter.irr(rb.get_sonar('left'), 0.85)
             distance_front = rb.get_sonar('front')
-            distance_back = rb.get_sonar('back')
+            distance_back = low_filter.irr(rb.get_sonar('back'), 0.85)
 
             if not turning_left and ((distance_left - old_d_left < - delta_heading and distance_left != 0) or (distance_right - old_d_right > delta_heading and distance_right != 0)):
                 turning_left = True
@@ -102,16 +102,16 @@ class RobotControl:
             if distance_left != 0 and distance_right != 0:
                 print('Correction traj en cours\nDistance droite : {}\ndistance gauche : {}'.format(distance_right, distance_left))
                 if distance_left > distance_right and not turning_left:
-                    rb.set_speed(spd, spd + (distance_right*Kp)) #Tourner à gauche
+                    rb.set_speed(spd, spd + (distance_left * Kp))   # Tourner à gauche
                 elif not turning_right:
-                    rb.set_speed(spd + (distance_right * Kp), spd) #Tourner à droite
+                    rb.set_speed(spd + (distance_right * Kp), spd)  # Tourner à droite
 
             elif distance_right == 0 or distance_right > 0.7:
                 print("Pas de mur à droite !")
                 if not turning_right and distance_left < 0.1:
-                    rb.set_speed(spd + (distance_right * Kp), spd)  # Tourner à droite
-                elif not turning_left and distance_right > 0.25:
-                    rb.set_speed(spd + (distance_right * Kp), spd)  # Tourner à droite
+                    rb.set_speed(spd + (abs(track_width - 0.04 - distance_left) * Kp), spd)  # Tourner à droite
+                elif not turning_left and distance_left > 0.25:
+                    rb.set_speed(spd, spd + abs(track_width - 0.04 - distance_left))  # Tourner à gauche
 
             elif distance_left == 0 or distance_left > 0.7:
                 print("Pas de mur à gauche")
