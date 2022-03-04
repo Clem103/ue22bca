@@ -1,5 +1,6 @@
 import numpy as np
 import time
+import csv
 
 class RobotControl:
     def __init__(self):
@@ -7,6 +8,7 @@ class RobotControl:
         self.distBetweenWheels = 0.12
         self.nTicksPerRevol = 512
         self.wheelDiameter = 0.06
+        self.header = []
         self.data_dump = []
 
 
@@ -60,18 +62,18 @@ class RobotControl:
             t0_loop = time.time()
             left, right = rb.get_odometers()
             if angle <= 0:
-                if left - left_t0 < nb_tick * 0.80:
+                if left - left_t0 < nb_tick * 0.90:
                     rb.set_speed(20, -20)
                 else:
-                    rb.set_speed(5, -5)
+                    rb.set_speed(2, -2)
                 if left - left_t0 >= nb_tick:
                     rb.set_speed(0, 0)
                     state = False
             else:
-                if right - right_t0 < nb_tick * 0.80:
+                if right - right_t0 < nb_tick * 0.90:
                     rb.set_speed(-20, 20)
                 else:
-                    rb.set_speed(-5, 5)
+                    rb.set_speed(-2, 2)
                 if right - right_t0 > nb_tick:
                     rb.set_speed(0, 0)
                     state = False
@@ -88,16 +90,21 @@ class RobotControl:
         Kp = 10
         delta_heading = 0.01
 
+        self.header = ['raw_dist_right', 'raw_dist_left', 'raw_filt_right', 'raw_filt_left', 'raw_dist_front', 'v_lat']
+
         while state:
             t0_loop = time.time()
             rb.set_speed(spd, spd)
-            raw_filt_distance_right = low_filter.irr(rb.get_sonar('right'), 0.70)
-            raw_filt_distance_left = low_filter.irr(rb.get_sonar('left'), 0.70)
+
+            raw_dist_r, raw_dist_l = rb.get_multiple_sonars(['right', 'left'])
+
+            distance_right = low_filter.irr(raw_dist_r, 0.70)
+            distance_left = low_filter.irr(raw_dist_l, 0.70)
             raw_distance_front = rb.get_sonar('front')
             raw_filt_distance_back = low_filter.irr(rb.get_sonar('back'), 0.70)
 
-            distance_right = raw_filt_distance_right + 0.04 if raw_filt_distance_right != 0 else raw_filt_distance_right    # distance entre le mur et le centre du robot à droite
-            distance_left = raw_filt_distance_left + 0.04 if raw_filt_distance_left != 0 else raw_filt_distance_left      # distance entre le mur et le centre du robot à gauche
+            # distance_right = raw_filt_distance_right + 0.04 if raw_filt_distance_right != 0 else raw_filt_distance_right    # distance entre le mur et le centre du robot à droite
+            # distance_left = raw_filt_distance_left + 0.04 if raw_filt_distance_left != 0 else raw_filt_distance_left      # distance entre le mur et le centre du robot à gauche
 
             distance_from_center_left = abs(1/2 * track_width - distance_left)  # Distance au centre basée sur le capteur gauche
             distance_from_center_right = abs(1/2 * track_width - distance_right)    # Distance au centre basée sur la capteur droite
@@ -133,6 +140,8 @@ class RobotControl:
             #         rb.set_speed(spd + (distance_from_center_right * Kp), spd)  # Tourner à droite
             #     elif not turning_left and distance_right < 0.1:
             #         rb.set_speed(spd, spd + (distance_from_center_right * Kp))  # Tourner à gauche
+
+            self.data_dump.append([raw_dist_r, raw_dist_l, distance_right, distance_left, raw_distance_front, v_lat])
 
             if raw_distance_front != 0 and raw_distance_front < max_dist:
                 print("Obstacle detected, front")
@@ -202,6 +211,12 @@ class RobotControl:
             if t_loop < loop_iteration_time:
                 time.sleep(loop_iteration_time - t_loop)
 
+    def dump_data_to_csv(self, header, data, location):
+        f = open(location + time.strftime("%Y%m%d_%H%M") + "_data_dump.csv", 'w', encoding='UTF8', newline='')
+        writer = csv.writer(f)
+        writer.writerow(header)
+        writer.writerows(data)
+        f.close()
 
 
 

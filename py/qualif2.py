@@ -1,3 +1,4 @@
+import os
 import rob1a_v02 as rob1a  # get robot simulator
 import control  # robot control functions
 import filt # sensors filtering functions
@@ -40,5 +41,7 @@ if __name__ == "__main__":
         ctrl.rotate_on_itself(rb, -90)
 
     ctrl.go_straight_using_walls_stop_obstacle(rb, 150, 0.3, irr_filt)
+
+    # ctrl.dump_data_to_csv(ctrl.header, ctrl.data_dump, os.getcwd() + '\\logs\\')
 
     rb.full_end()
