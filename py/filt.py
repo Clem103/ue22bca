@@ -1,12 +1,14 @@
 import numpy as np
 import time
 
-class LowPassFilter ():
+
+class LowPassFilter:
 
     def __init__(self): 
         self.a = 0.0  # here you define some useful variables
         self.mem = 0.0
         self.init = True
+        self.old_value = []
     
     def irr(self, x, a):
         """
@@ -39,3 +41,19 @@ class LowPassFilter ():
         """
         self.mem = 0.0
         self.init = True
+
+    def moving_avg(self, x, n):
+        if x == 0:
+            self.old_value = []
+
+        if len(self.old_value) < n:
+            self.old_value.append(x)
+        else:
+            self.old_value.pop(0)
+            self.old_value.append(x)
+
+        avg = 0
+        for elem in self.old_value:
+            avg += elem
+        return avg / len(self.old_value)
+

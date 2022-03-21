@@ -11,29 +11,6 @@ class RobotControl:
         self.header = []
         self.data_dump = []
 
-
-    def test_move (self,rb,speed_left,speed_right,duration):
-        """
-        Example of test function to check if the robot moves
-
-        input parameters :
-        rb : robot object
-        speed_left : speed command of left wheel
-        speed_right : speed command of right wheel
-        duration : duration of the move
-
-        output paremeters :
-        None
-        """
-        # forward motion
-        rb.set_speed(speed_left,speed_right)
-        loopIterTime = 0.050
-        tStart = time.time()
-        while time.time()-tStart < duration:
-            time.sleep(loopIterTime) # wait
-        # stop the robot 
-        rb.stop()
-
     def go_straight_stop_on_front_obstacle(self,rb,spd,max_dist):
         loop_iteration_time = 0.2
         rb.set_speed(spd,spd)
@@ -87,7 +64,7 @@ class RobotControl:
         state = True
         v_lat = 0
         old_d_left, old_d_right, old_v_lat = 0,0,0
-        Kp = 10
+        Kp = 180
         delta_heading = 0.01
 
         self.header = ['raw_dist_right', 'raw_dist_left', 'raw_filt_right', 'raw_filt_left', 'raw_dist_front', 'v_lat']
@@ -96,11 +73,11 @@ class RobotControl:
             t0_loop = time.time()
             rb.set_speed(spd, spd)
 
-            raw_dist_r, raw_dist_l = rb.get_multiple_sonars(['right', 'left'])
+            raw_dist_r, raw_dist_l, raw_dist_f = rb.get_multiple_sonars(['right', 'left', 'front'])
 
-            distance_right = low_filter.irr(raw_dist_r, 0.70)
-            distance_left = low_filter.irr(raw_dist_l, 0.70)
-            raw_distance_front = rb.get_sonar('front')
+            distance_right = low_filter.irr(raw_dist_r, 0.75)
+            distance_left = low_filter.irr(raw_dist_l, 0.75)
+            distance_front = low_filter.moving_avg(raw_dist_f, 4)
             raw_filt_distance_back = low_filter.irr(rb.get_sonar('back'), 0.70)
 
             # distance_right = raw_filt_distance_right + 0.04 if raw_filt_distance_right != 0 else raw_filt_distance_right    # distance entre le mur et le centre du robot à droite
@@ -108,6 +85,7 @@ class RobotControl:
 
             distance_from_center_left = abs(1/2 * track_width - distance_left)  # Distance au centre basée sur le capteur gauche
             distance_from_center_right = abs(1/2 * track_width - distance_right)    # Distance au centre basée sur la capteur droite
+            distance_from_center = (distance_from_center_right + distance_from_center_left)/2
 
             v_lat = 1/2 * ((old_d_left - distance_left) + (distance_right - old_d_right)) # Comptée positive lorsque l'on s'approche à gauche
 
@@ -120,30 +98,28 @@ class RobotControl:
             #     turning_right = True
             #     print("Heading right")
 
-            # if distance_left != 0 and distance_right != 0:
-            #     print('Correction traj en cours\nDistance droite : {}\ndistance gauche : {}'.format(distance_right, distance_left))
-            #     if distance_left > distance_right:
-            #         rb.set_speed(spd, spd + (distance_from_center_left * Kp))   # Tourner à gauche prop à l'écart entre le centre de la piste et le robot
-            #     elif not turning_right:
-            #         rb.set_speed(spd + (distance_from_center_right * Kp), spd)  # Tourner à droite prop à l'écart entre le centre de la piste et le robot
-            #
-            # elif distance_right == 0 or distance_right > 0.7:
-            #     print("Pas de mur à droite !")
-            #     if not turning_right and distance_left < 0.1:
-            #         rb.set_speed(spd + distance_from_center_left * Kp, spd)  # Tourner à droite
-            #     elif not turning_left and distance_left > 0.25:
-            #         rb.set_speed(spd, spd + distance_from_center_left * Kp)  # Tourner à gauche
-            #
-            # elif distance_left == 0 or distance_left > 0.7:
-            #     print("Pas de mur à gauche")
-            #     if not turning_right and distance_right > 0.25:
-            #         rb.set_speed(spd + (distance_from_center_right * Kp), spd)  # Tourner à droite
-            #     elif not turning_left and distance_right < 0.1:
-            #         rb.set_speed(spd, spd + (distance_from_center_right * Kp))  # Tourner à gauche
+            if distance_left != 0 and distance_right != 0 and distance_right < 0.55 and distance_left < 0.55:
+                if distance_from_center > 0.1 * track_width:
 
-            self.data_dump.append([raw_dist_r, raw_dist_l, distance_right, distance_left, raw_distance_front, v_lat])
+                    # print('Correction traj en cours\nDistance droite : {}\ndistance gauche : {}'.format(distance_right,
+                    #                                                                                     distance_left))
 
-            if raw_distance_front != 0 and raw_distance_front < max_dist:
+                    if distance_left > distance_right:
+                        rb.set_speed(spd, spd + (distance_from_center_right * Kp))   # Tourner à gauche prop à l'écart entre le centre de la piste et le robot
+                    else:
+                        rb.set_speed(spd + (distance_from_center_right * Kp), spd)  # Tourner à droite prop à l'écart entre le centre de la piste et le robot
+
+            elif distance_right == 0 or distance_right >= 0.55:
+                # print("Pas de mur à droite !")
+                rb.set_speed(spd,spd)
+
+            elif distance_left == 0 or distance_left > 0.7:
+                # print("Pas de mur à gauche")
+                rb.set_speed(spd,spd)
+
+            self.data_dump.append([raw_dist_r, raw_dist_l, raw_dist_f, distance_right, distance_left, distance_front, v_lat])
+
+            if distance_front != 0 and distance_front < max_dist:
                 print("Obstacle detected, front")
                 rb.set_speed(0, 0)
                 state = False
@@ -197,9 +173,9 @@ class RobotControl:
             old_value = (left, middle, right)
 
             if seq_line == 'g' and seq_line!=seq_line_old:
-                rb.set_speed(spd*1.1, spd*0.9)
+                rb.set_speed(spd*1.01, spd*0.99)
             elif seq_line == 'd' and seq_line!=seq_line_old:
-                rb.set_speed(spd*0.9, spd*1.1)
+                rb.set_speed(spd*0.99, spd*1.01)
             else:
                 seq_line_old = seq_line
 
@@ -207,7 +183,6 @@ class RobotControl:
                 state = False
 
             t_loop = time.time() - t0_loop
-            print(t_loop)
             if t_loop < loop_iteration_time:
                 time.sleep(loop_iteration_time - t_loop)
 
@@ -217,6 +192,36 @@ class RobotControl:
         writer.writerow(header)
         writer.writerows(data)
         f.close()
+
+    def ajustement_fin_course(self, rb, spd, dist, low_filter):
+        loop_iteration_time = 0.2
+        state = True
+
+        distance_right, distance_left = rb.get_multiple_sonars(['right', 'left'])
+
+        if distance_left == 0 or (distance_left > distance_right != 0):
+            print("Rotation gauche")
+            self.rotate_on_itself(rb, 90)
+        else:
+            print("Rotation droite")
+            self.rotate_on_itself(rb, -90)
+
+        rb.set_speed(spd, spd)
+
+        while state:
+            t0_loop = time.time()
+
+
+            distance_front = low_filter.moving_avg(rb.get_sonar('front'), 4)
+
+            if distance_front < 0.275:
+                rb.set_speed(0,0)
+                state = False
+
+
+            t_loop = time.time() - t0_loop
+            if t_loop < loop_iteration_time:
+                time.sleep(loop_iteration_time - t_loop)
 
 
 
