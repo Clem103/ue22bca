@@ -64,7 +64,8 @@ class RobotControl:
         state = True
         v_lat = 0
         old_d_left, old_d_right, old_v_lat = 0,0,0
-        Kp = 180
+        Kp = 120
+        seuil_v_lat = 0.005
         delta_heading = 0.01
 
         self.header = ['raw_dist_right', 'raw_dist_left', 'raw_filt_right', 'raw_filt_left', 'raw_dist_front', 'v_lat']
@@ -89,6 +90,8 @@ class RobotControl:
 
             v_lat = 1/2 * ((old_d_left - distance_left) + (distance_right - old_d_right)) # Comptée positive lorsque l'on s'approche à gauche
 
+            print(v_lat)
+
             # if not turning_left and ((distance_left - old_d_left < - delta_heading and distance_left != 0) or (distance_right - old_d_right > delta_heading and distance_right != 0)):
             #     turning_left = True
             #     turning_right = False
@@ -99,15 +102,14 @@ class RobotControl:
             #     print("Heading right")
 
             if distance_left != 0 and distance_right != 0 and distance_right < 0.55 and distance_left < 0.55:
-                if distance_from_center > 0.1 * track_width:
 
-                    # print('Correction traj en cours\nDistance droite : {}\ndistance gauche : {}'.format(distance_right,
-                    #                                                                                     distance_left))
+                # print('Correction traj en cours\nDistance droite : {}\ndistance gauche : {}'.format(distance_right,
+                #                                                                                     distance_left))
 
-                    if distance_left > distance_right:
-                        rb.set_speed(spd, spd + (distance_from_center_right * Kp))   # Tourner à gauche prop à l'écart entre le centre de la piste et le robot
-                    else:
-                        rb.set_speed(spd + (distance_from_center_right * Kp), spd)  # Tourner à droite prop à l'écart entre le centre de la piste et le robot
+                if distance_left > distance_right and v_lat < seuil_v_lat:
+                    rb.set_speed(spd, spd + (distance_from_center_right * Kp))   # Tourner à gauche prop à l'écart entre le centre de la piste et le robot
+                elif v_lat > - seuil_v_lat:
+                    rb.set_speed(spd + (distance_from_center_right * Kp), spd)  # Tourner à droite prop à l'écart entre le centre de la piste et le robot
 
             elif distance_right == 0 or distance_right >= 0.55:
                 # print("Pas de mur à droite !")
