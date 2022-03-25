@@ -11,19 +11,22 @@ class RobotControl:
         self.header = []
         self.data_dump = []
 
-    def go_straight_stop_on_front_obstacle(self,rb,spd,max_dist):
+    def go_straight_stop_on_front_obstacle(self,rb,spd,max_dist, low_filter):
         loop_iteration_time = 0.2
-        rb.set_speed(spd,spd)
+        rb.set_speed(spd, spd)
         state = True
+        Kp = -20
         while state:
             t0_loop = time.time()
-            distance = rb.get_sonar('front')
+            distance = low_filter.moving_avg(rb.get_sonar('front'), 4)
+            if distance < 2*max_dist and distance != 0:
+                rb.set_speed(0.5*spd + Kp*(max_dist - distance), 0.5 * spd + Kp*(max_dist - distance))
             if distance < max_dist and distance != 0:
                 rb.set_speed(0, 0)
                 state = False
             t_loop = time.time() - t0_loop
             if t_loop < loop_iteration_time:
-                time.sleep(loop_iteration_time-t0_loop)
+                time.sleep(loop_iteration_time-t_loop)
 
     def rotate_on_itself(self,rb,angle): # angle en degré (positif dans la rotation vers la gauche)
         loop_iteration_time = 0.2

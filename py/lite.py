@@ -11,7 +11,7 @@ if __name__ == "__main__":
     ctrl = control.RobotControl() # create a robot controller
     irr_filt = filt.LowPassFilter()
 
-    ctrl.go_straight_using_walls_stop_obstacle(rb, 120, 0.3, irr_filt)
+    ctrl.go_straight_stop_on_front_obstacle(rb, 120, 0.3, irr_filt)
 
     rb.set_speed(0, 0)
 
@@ -27,7 +27,7 @@ if __name__ == "__main__":
         print("Rotation droite")
         ctrl.rotate_on_itself(rb, -90)
 
-    ctrl.go_straight_using_walls_stop_obstacle(rb, 120, 0.3, irr_filt)
+    ctrl.go_straight_stop_on_front_obstacle(rb, 120, 0.3, irr_filt)
 
     rb.set_speed(0, 0)
 
@@ -43,7 +43,7 @@ if __name__ == "__main__":
         print("Rotation droite")
         ctrl.rotate_on_itself(rb, -90)
 
-    ctrl.go_straight_using_walls_stop_obstacle(rb, 120, 0.35, irr_filt)
+    ctrl.go_straight_stop_on_front_obstacle(rb, 120, 0.30, irr_filt)
 
     rb.set_speed(0, 0)
 
@@ -59,7 +59,7 @@ if __name__ == "__main__":
         print("Rotation droite")
         ctrl.rotate_on_itself(rb, -90)
 
-    ctrl.go_straight_using_walls_stop_obstacle(rb, 120, 0.35, irr_filt)
+    ctrl.go_straight_stop_on_front_obstacle(rb, 120, 0.30, irr_filt)
 
     rb.set_speed(0, 0)
 
@@ -91,7 +91,7 @@ if __name__ == "__main__":
         print("Rotation droite")
         ctrl.rotate_on_itself(rb, -90)
 
-    ctrl.go_straight_using_walls_stop_obstacle(rb, 120, 0.35, irr_filt)
+    ctrl.go_straight_using_walls_stop_obstacle(rb, 120, 0.30, irr_filt)
 
     ctrl.ajustement_fin_course(rb, 20, 0.35, irr_filt)
 
