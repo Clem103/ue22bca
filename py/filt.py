@@ -57,3 +57,15 @@ class LowPassFilter:
             avg += elem
         return avg / len(self.old_value)
 
+    def median_value(self, x, n):
+        if x == 0:
+            self.old_value = []
+
+        if len(self.old_value) < n:
+            self.old_value.append(x)
+        else:
+            self.old_value.pop(0)
+            self.old_value.append(x)
+
+        return np.median(self.old_value)
+
