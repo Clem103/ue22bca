@@ -13,6 +13,6 @@ if __name__ == "__main__":
     filt_right = filt.LowPassFilter()
     filt_front = filt.LowPassFilter()
 
-    ctrl.follow_path_advanced(rb, 70, 0.3, filt_left, filt_right, filt_front)
+    ctrl.follow_path_advanced(rb, 70, 0.2, filt_left, filt_right, filt_front)
 
     rb.full_end()

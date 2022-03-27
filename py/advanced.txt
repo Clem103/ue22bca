@@ -1,2 +1,17 @@
 1) Describe quickly here how do you control the robots to perform the advanced track. 
 2) If you filter the measurements, tell a few words on how you do it.
+
+1) The robot is controled via a line tracking and using sonars from the wall :
+
+Line tracking : The robot first "grabs" the line by using centerline sensors and transforming its value to a boolean.
+I then get 3 boolean : left, middle, right and using their values I can know how to control the robot. For exemple,
+the sequence middle, left, none indicates that the robots drifts to the right.
+I then correct the robot by increasing the correct wheel speed by a factor of 0.2 and reduce the other by a factor of 0.2
+
+Sonars : Using the values I get from filtered sonars, I calculate the distance between the robot and the center of the track
+and I correct using a proportional corrector.
+In order to avoid over-compensation, I also use a derivated corrector that reduce the rotation based on the lateral velocity
+
+2) Filters : I use 1 instance of the filter for every sonar. 
+For the front sensor, I use a moving average filter using the 4 latest values and that resets when the raw sonar value is 0
+For the left and right sensors, I use a median filter, that returns the median of the 3 latest values of the sensor

@@ -191,8 +191,8 @@ class RobotControl:
         old_value = (False, False, False)
         v_lat = 0
         old_d_left, old_d_right, old_v_lat = 0, 0, 0
-        Kp = 150
-        seuil_v_lat = 0.005
+        Kp = 160
+        Kd = 400
         Kp_line = 0.2
 
 
@@ -263,9 +263,9 @@ class RobotControl:
 
                     if distance_left > distance_right:
                         rb.set_speed(spd, spd + (
-                                    distance_from_center_right * Kp))  # Tourner à gauche prop à l'écart entre le centre de la piste et le robot
+                                    distance_from_center * Kp) - Kd * v_lat)  # Tourner à gauche prop à l'écart entre le centre de la piste et le robot
                     else:
-                        rb.set_speed(spd + (distance_from_center_right * Kp),
+                        rb.set_speed(spd + (distance_from_center * Kp) + Kd * v_lat,
                                      spd)  # Tourner à droite prop à l'écart entre le centre de la piste et le robot
 
                 elif distance_right == 0 or distance_right >= 0.55:
